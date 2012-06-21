@@ -3,6 +3,7 @@
 \alias{catrandstat}
 \alias{catrandpvalue}
 \alias{catrandpvaluepermute}
+\alias{print.crblocks_output}
 \title{Categorical Randomized Block Data Analysis}
 \description{
  Implements a statistical test for comparing barplots or histograms of 
@@ -12,11 +13,14 @@
  catrandstat(rawdata)
  catrandpvalue(datafilename,Nrepeats)
  catrandpvaluepermute(datafilename,Nrepeats)
+ \method{print}{crblocks_output}(x,\dots)
 }
 \arguments{
  \item{rawdata}{the data to analyse.}
  \item{datafilename}{a character string giving the name of the data file to analyse.}
  \item{Nrepeats}{the number of Monte Carlo simulated data sets to use in computing the p-value (10000+ recommended).}
+ \item{x}{output from catrandstat, catrandpvalue or catrandpvaluepermute}
+ \item{\dots}{not used.}
 }
 \details{
  This package implements the statistical test for comparing barplots or histograms of
@@ -50,21 +54,49 @@
  \item{$Ncategories}{the number of different categories present in the data (length of $categories).}
  \item{$catCounts}{a matrix containing the number of times each product was placed in each category.}
  \item{$judgeCatCounts}{a matrix containing the number of times each judge used each category.}
- \item{$comparisonStatistic}{the test statistic computed from the ranked data.}
+ \item{$Sstatistic}{the S statistic computed for the data.}
+ \item{$Mstatistic}{the M statistic computed for the data.}
+ \item{$L2statistic}{the L^2 statistic computed for the data.}
+ \item{$Schi2pvalue}{the chi^2 p-value of the S statistic for the data.}
+ \item{$Mchi2pvalue}{the chi^2 p-value of the M statistic for the data.}
+ \item{$L2chi2pvalue}{the chi^2 p-value of the L^2 statistic for the data.}
 
  For the \code{catrandpvalue} function:
  \item{$rawdata}{a matrix containing the data that was read from the input file (categories for each product by each judge).}
- \item{$montecarlodata}{a matrix containing one of the Monte Carlo data sets that was generate.}
- \item{$Ngenerated}{the total number of Monte Carlo data sets generated to give Nrepeats sets with no ties (where a judge places all products into the same category).}
- \item{$Sdata}{the S statistic value for the data read from the file.}
- \item{$Smontecarlo}{the S statistic values for the Monte Carlo data sets.}
- \item{$pvalue}{the p-value for the null hypothesis that there exist no pairwise differences between products.}
+ \item{$Nproducts}{the number of products tested (number of data columns).}
+ \item{$Ncategories}{the number of different categories present in the data (length of $categories).}
+ \item{$Njudges}{the number of judges in the data file (number of data lines).}
+ \item{$Ngenerated}{the number of Monte Carlo data sets generated in total to produce Nrepeats data sets with no ties (where a judge places all products into the same category).}
+ \item{$Sdata}{the S statistic computed for the data.}
+ \item{$Mdata}{the M statistic computed for the data.}
+ \item{$L2data}{the L^2 statistic computed for the data.}
+ \item{$Smontecarlo}{a vector containing the S statistic values computed for each Monte Carlo data set.}
+ \item{$Mmontecarlo}{a vector containing the M statistic values computed for each Monte Carlo data set.}
+ \item{$L2montecarlo}{a vector containing the L^2 statistic values computed for each Monte Carlo data set.}
+ \item{$Spvalue}{the Monte Carlo p-value for the null hypothesis that there exist no pairwise differences between products based on the S statistic.}
+ \item{$Mpvalue}{the Monte Carlo p-value for the null hypothesis that there exist no pairwise differences between products based on the M statistic.}
+ \item{$L2pvalue}{the Monte Carlo p-value for the null hypothesis that there exist no pairwise differences between products based on the L^2 statistic.}
+ \item{$Schi2pvalue}{the chi^2 p-value of the S statistic for the data.}
+ \item{$Mchi2pvalue}{the chi^2 p-value of the M statistic for the data.}
+ \item{$L2chi2pvalue}{the chi^2 p-value of the L^2 statistic for the data.}
 
  For the \code{catrandpvaluepermute} function:
  \item{$rawdata}{a matrix containing the data that was read from the input file (categories for each product by each judge).}
- \item{$Sdata}{the S statistic value for the data read from the file.}
- \item{$Spermute}{the S statistic values for the Monte Carlo data sets.}
- \item{$pvalue}{the p-value for the null hypothesis that there exist no pairwise differences between products.}
+ \item{$Nproducts}{the number of products tested (number of data columns).}
+ \item{$Ncategories}{the number of different categories present in the data (length of $categories).}
+ \item{$Njudges}{the number of judges in the data file (number of data lines).}
+ \item{$Sdata}{the S statistic computed for the data.}
+ \item{$Mdata}{the M statistic computed for the data.}
+ \item{$L2data}{the L^2 statistic computed for the data.}
+ \item{$Spermute}{a vector containing the S statistic values computed for each permuted data set.}
+ \item{$Mpermute}{a vector containing the M statistic values computed for each permuted data set.}
+ \item{$L2permute}{a vector containing the L^2 statistic values computed for each permuted data set.}
+ \item{$Spvalue}{the permutation p-value for the null hypothesis that there exist no pairwise differences between products based on the S statistic.}
+ \item{$Mpvalue}{the permutation p-value for the null hypothesis that there exist no pairwise differences between products based on the M statistic.}
+ \item{$L2pvalue}{the permutation p-value for the null hypothesis that there exist no pairwise differences between products based on the L^2 statistic.}
+ \item{$Schi2pvalue}{the chi^2 p-value of the S statistic for the data.}
+ \item{$Mchi2pvalue}{the chi^2 p-value of the M statistic for the data.}
+ \item{$L2chi2pvalue}{the chi^2 p-value of the L^2 statistic for the data.}
 }
 \references{
  ``A Statistical Test for Categorical Randomized Block Sensory Evaluation Data'',
@@ -78,18 +110,50 @@
 \examples{
  ### Analyse the sample dataset provided with this package:
  # Load the data from the file and compute its test statistic
- inputfile = system.file('extdata', 'omahony.txt', package='crblocks')
- omahonydata=read.table(file(inputfile,'r'))
- output = catrandstat(omahonydata)
- output$comparisonStatistic
+  inputfile = system.file('extdata', 'omahony.txt', package='crblocks')
+  omahonydata=read.table(file(inputfile,'r'))
+  catrandstat(omahonydata)
+### OUTPUT:
+#
+# Statistic   dof   data value   chi^2 p-value
+#  S           6     13.16        0.04058 
+#  M           3     11.42        0.003311 
+#  L^2         1     6.671        0.009799 
+#
 
- # Load the data from the file and compute the p-value for its test statistic using Monte Carlo simulation:
- output = catrandpvalue(inputfile,1000)
- output$pvalue
+ # Load the data from the file and compute the p-value for
+ # its test statistic using Monte Carlo simulation:
+  catrandpvalue(inputfile,1000)
+### SAMPLE OUTPUT:
+#
+# Statistic   dof   data value   chi^2 p-value   Simulated p-value
+#  S           6     13.16        0.04058         0.017 
+#  M           3     11.42        0.003311        0.002 
+#  L^2         1     6.671        0.009799        0.008 
+#
 
- # Load the data from the file and compute the p-value for its test statistic using Monte Carlo simulation:
- output = catrandpvaluepermute(inputfile,1000)
- output$pvalue
+ # Load the data from the file, compute the p-value for
+ # its test statistic using Monte Carlo simulation, and
+ # store the output variables in X:
+  Nrepeats = 2000
+  X = catrandpvalue(inputfile,Nrepeats)
+ # This will be a number greater than Nrepeats:
+  X$Ngenerated
+### SAMPLE OUTPUT:
+#
+# [1] 27175
+
+ # Load the data from the file and compute the p-value for
+ # its test statistic using Monte Carlo simulation:
+ catrandpvaluepermute(inputfile,2000)
+### SAMPLE OUTPUT:
+#
+# Statistic   dof   data value   chi^2 p-value   Simulated p-value
+#  S           6     13.16        0.04058         0.0235 
+#  M           3     11.42        0.003311        0.002 
+#  L^2         1     6.671        0.009799        0.0065 
+#
+
 }
 \keyword{barplot comparison}
 \keyword{computer-intensive p-values}

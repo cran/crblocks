@@ -1,3 +1,33 @@
+print.crblocks_output <- function(x,...) {
+#######################################################################
+# Function to format our output nicely                                #
+#######################################################################
+ Nsigfigs=4
+ cat("\n")
+ if (!is.null(x$Sstatistic)){ ### format output from catrandstat()
+  cat(paste(" Statistic   dof   data value   chi^2 p-value\n"))
+  cat(paste("  S          ",(x$Nproducts-1)*(x$Ncategories-1),"   ",signif(x$Sstatistic,Nsigfigs),"      ",signif(x$Schi2pvalue,Nsigfigs),"\n"))
+  cat(paste("  M          ",x$Ncategories-1,"   ",signif(x$Mstatistic,Nsigfigs),"      ",signif(x$Mchi2pvalue,Nsigfigs),"\n"))
+  cat(paste("  L^2         1    ",signif(x$L2statistic,Nsigfigs),"      ",signif(x$L2chi2pvalue,Nsigfigs),"\n"))
+ } else if (!is.null(x$Smontecarlo)){ ### format output from catrandpvalue()
+  cat(paste(" Statistic   dof   data value   chi^2 p-value   Simulated p-value\n"))
+  cat(paste("  S          ",(x$Nproducts-1)*(x$Ncategories-1),"   ",signif(x$Sdata,Nsigfigs),"      ",signif(x$Schi2pvalue,Nsigfigs),"       ",signif(x$Spvalue,Nsigfigs),"\n"))
+  cat(paste("  M          ",x$Ncategories-1,"   ",signif(x$Mdata,Nsigfigs),"      ",signif(x$Mchi2pvalue,Nsigfigs),"      ",signif(x$Mpvalue,Nsigfigs),"\n"))
+  cat(paste("  L^2         1    ",signif(x$L2data,Nsigfigs),"      ",signif(x$L2chi2pvalue,Nsigfigs),"      ",signif(x$L2pvalue,Nsigfigs),"\n"))
+ } else if (!is.null(x$Spermute)){ ### format output from catrandpvaluepermute()
+  cat(paste(" Statistic   dof   data value   chi^2 p-value   Simulated p-value\n"))
+  cat(paste("  S          ",(x$Nproducts-1)*(x$Ncategories-1),"   ",signif(x$Sdata,Nsigfigs),"      ",signif(x$Schi2pvalue,Nsigfigs),"       ",signif(x$Spvalue,Nsigfigs),"\n"))
+  cat(paste("  M          ",x$Ncategories-1,"   ",signif(x$Mdata,Nsigfigs),"      ",signif(x$Mchi2pvalue,Nsigfigs),"      ",signif(x$Mpvalue,Nsigfigs),"\n"))
+  cat(paste("  L^2         1    ",signif(x$L2data,Nsigfigs),"      ",signif(x$L2chi2pvalue,Nsigfigs),"      ",signif(x$L2pvalue,Nsigfigs),"\n"))
+ }
+ cat("\n")
+
+ NextMethod("print")
+}
+
+
+
+
 catrandstat <- function(rawdata){
 #######################################################################
 # Function to compute the statistic                                   #
@@ -61,22 +91,39 @@ catrandstat <- function(rawdata){
    ### not singular? okay, compute the inverse:
     Vinverse <- qr.solve(V)
 
-   ### Compute the statistic:
-    S <- 0  # initialise
+   ### Compute the S statistic:
+    S = 0  # initialise
     for (i in 1:Nproducts){
-     S <- S + (Nproducts-1)/Nproducts*crossprod(t(crossprod(d[,i],Vinverse)),d[,i])
+     S = S + (Nproducts-1)/Nproducts*crossprod(t(crossprod(d[,i],Vinverse)),d[,i])
     }
+    Schi2pvalue = pchisq(S,(Nproducts-1)*(Ncategories-1),lower.tail=FALSE);
   } else {
    ### flag the singular matrix by returning NaN
-    S <- NaN
+    S = NaN
     Vinverse <- NaN
   }
+
+  ### Compute the M and L^2 statistics:
+   w=sum(apply(rawdata,1,var))
+   Abar=apply(rawdata,2,mean)
+   ### obtain the linear contrasts:
+   if (Nproducts%%2){ ### odd number of products:
+    # eg. [-1 0 -1]
+    lambda = -floor(Nproducts/2):floor(Nproducts/2)
+   } else {
+    # eg. [-3 -1 1 3]
+    lambda = 2*(1:Nproducts)-Nproducts-1
+   }
+   M = (Njudges^2/w)*sum((Abar-mean(Abar))^2)
+   L2 = ((Njudges/sqrt(w))*sum(lambda*Abar)/sqrt(sum(lambda^2)))^2
+   Mchi2pvalue = pchisq(M,(Nproducts-1),lower.tail=FALSE);
+   L2chi2pvalue = pchisq(L2,1,lower.tail=FALSE);
 
 
 #######################################################################
 # Return some variables of interest                                   #
 #######################################################################
- list(
+  returnoutput = list(
   Njudges=Njudges,
   Nproducts=Nproducts,
   rawdata=rawdata,
@@ -84,11 +131,20 @@ catrandstat <- function(rawdata){
   Ncategories=Ncategories,
   catCounts=catCounts,
   judgeCatCounts=judgeCatCountsFull,
-  comparisonStatistic=S
+  Sstatistic=S,
+  Mstatistic=M,
+  L2statistic=L2,
+  Schi2pvalue = Schi2pvalue,
+  Mchi2pvalue = Mchi2pvalue,
+  L2chi2pvalue = L2chi2pvalue
  )
 
-} ### end of function
+ ### specify our print method to display the output nicely:
+  class(returnoutput) <- c("crblocks_output",class(returnoutput))
+ ### print (using the method determined by R):
+  returnoutput
 
+} ### end of function
 
 
 
@@ -120,19 +176,23 @@ catrandpvalue <- function(datafilename,Nrepeats){
  # Compute the statistic for the data                                  #
  #######################################################################
   dataoutput <- catrandstat(rawdata)
-  Sdata <- dataoutput$comparisonStatistic
+  Sdata <- dataoutput$Sstatistic
+  Mdata <- dataoutput$Mstatistic
+  L2data <- dataoutput$L2statistic
+  Schi2pvalue <- dataoutput$Schi2pvalue
+  Mchi2pvalue <- dataoutput$Mchi2pvalue
+  L2chi2pvalue <- dataoutput$L2chi2pvalue
 
  #######################################################################
  # Run the Monte Carlo simulations to compute a p-value                #
  #######################################################################
-  Smontecarlo=matrix(NaN,Nrepeats,1) # initialise
+ ### Firstly, we generate the Monte Carlo data:
   Ngenerated=0
   montecarlodata=array(NaN,c(dataoutput$Njudges,dataoutput$Nproducts,Nrepeats))
   for (i in 1:dataoutput$Njudges){
    indx = 1:Nrepeats # initialise
    while (length(indx)){
     Ngenerated=Ngenerated+length(indx) # count how many we actully generate
-#wrong:    montecarlodata[i,,indx]=dataoutput$categories[which(rmultinom(length(indx)*dataoutput$Nproducts,1,dataoutput$judgeCatCounts[i,])==1)%%dataoutput$Ncategories + 1]
     montecarlodata[i,,indx]=dataoutput$categories[apply(rmultinom(length(indx)*dataoutput$Nproducts,1,dataoutput$judgeCatCounts[i,])==1,2,which)]
     ### we have the data, now loop over them and see which are tied, so that we can replace them (those in 'indx'):
     indx=indx[which(apply(apply(apply(montecarlodata[i,,indx],2,sort),2,diff),2,sum)==0)]
@@ -146,29 +206,50 @@ catrandpvalue <- function(datafilename,Nrepeats){
    }
   }
 
- ### Compute the statistic for each Monte Carlo data set:
+ ### Now we can compute the statistic for each Monte Carlo data set:
+  Smontecarlo=matrix(NaN,Nrepeats,1) # initialise
+  Mmontecarlo=matrix(NaN,Nrepeats,1) # initialise
+  L2montecarlo=matrix(NaN,Nrepeats,1) # initialise
   for (n in 1:Nrepeats){
-   Smontecarlo[n]=catrandstat(montecarlodata[,,n])$comparisonStatistic
+   montecarlooutput = catrandstat(montecarlodata[,,n])
+   Smontecarlo[n] = montecarlooutput$Sstatistic
+   Mmontecarlo[n] = montecarlooutput$Mstatistic
+   L2montecarlo[n] = montecarlooutput$L2statistic
   }
 
-pvalue=length(Smontecarlo[Smontecarlo>c(Sdata)])/length(Smontecarlo)
-
-### Truncate the Monte Carlo data so that we can return a sample data set
-# montecarlodata=montecarlodata[,,1]
+Spvalue=length(Smontecarlo[Smontecarlo>c(Sdata)])/length(Smontecarlo)
+Mpvalue=length(Mmontecarlo[Mmontecarlo>c(Mdata)])/length(Mmontecarlo)
+L2pvalue=length(L2montecarlo[L2montecarlo>c(L2data)])/length(L2montecarlo)
 
 #######################################################################
 # Return some variables of interest                                   #
 #######################################################################
- list(
+ returnoutput = list(
   rawdata=rawdata,
-  montecarlodata=montecarlodata,
+  Nproducts=dataoutput$Nproducts,
+  Ncategories=dataoutput$Ncategories,
+  Njudges=dataoutput$Njudges,
   Ngenerated=Ngenerated,
   Sdata=Sdata,
+  Mdata=Mdata,
+  L2data=L2data,
   Smontecarlo=Smontecarlo,
-  pvalue=pvalue
+  Mmontecarlo=Mmontecarlo,
+  L2montecarlo=L2montecarlo,
+  Spvalue=Spvalue,
+  Mpvalue=Mpvalue,
+  L2pvalue=L2pvalue,
+  Schi2pvalue=Schi2pvalue,
+  Mchi2pvalue=Mchi2pvalue,
+  L2chi2pvalue=L2chi2pvalue
  )
-} ### end of function
 
+ ### specify our print method to display the output nicely:
+  class(returnoutput) <- c("crblocks_output",class(returnoutput))
+ ### print (using the method determined by R):
+  returnoutput
+
+} ### end of function
 
 
 
@@ -197,24 +278,54 @@ catrandpvaluepermute <- function(datafilename,Nrepeats){
  # Compute the statistic for the data                                  #
  #######################################################################
   dataoutput <- catrandstat(rawdata)
-  Sdata <- dataoutput$comparisonStatistic
+  Sdata = dataoutput$Sstatistic
+  Mdata = dataoutput$Mstatistic
+  L2data = dataoutput$L2statistic
+  Schi2pvalue <- dataoutput$Schi2pvalue
+  Mchi2pvalue <- dataoutput$Mchi2pvalue
+  L2chi2pvalue <- dataoutput$L2chi2pvalue
 
  ### Compute the statistic for each permuted data set:
   Spermute=matrix(NaN,Nrepeats,1) # initialise
+  Mpermute=matrix(NaN,Nrepeats,1) # initialise
+  L2permute=matrix(NaN,Nrepeats,1) # initialise
   for (n in 1:Nrepeats){
    permdata=t(apply(rawdata,1,sample)) ### this permutes each row separately (but transposes too)
-   Spermute[n]=catrandstat(permdata)$comparisonStatistic
+   permuteoutput = catrandstat(permdata)
+   Spermute[n] = permuteoutput$Sstatistic
+   Mpermute[n] = permuteoutput$Mstatistic
+   L2permute[n] = permuteoutput$L2statistic
   }
 
- pvalue=length(Spermute[Spermute>c(Sdata)])/length(Spermute)
+ Spvalue=length(Spermute[Spermute>c(Sdata)])/length(Spermute)
+ Mpvalue=length(Mpermute[Mpermute>c(Mdata)])/length(Mpermute)
+ L2pvalue=length(L2permute[L2permute>c(L2data)])/length(L2permute)
 
 #######################################################################
 # Return some variables of interest                                   #
 #######################################################################
- list(
+ returnoutput = list(
   rawdata=rawdata,
+  Nproducts=dataoutput$Nproducts,
+  Ncategories=dataoutput$Ncategories,
+  Njudges=dataoutput$Njudges,
   Sdata=Sdata,
+  Mdata=Mdata,
+  L2data=L2data,
   Spermute=Spermute,
-  pvalue=pvalue
+  Mpermute=Mpermute,
+  L2permute=L2permute,
+  Spvalue=Spvalue,
+  Mpvalue=Mpvalue,
+  L2pvalue=L2pvalue,
+  Schi2pvalue=Schi2pvalue,
+  Mchi2pvalue=Mchi2pvalue,
+  L2chi2pvalue=L2chi2pvalue
  )
+
+ ### specify our print method to display the output nicely:
+  class(returnoutput) <- c("crblocks_output",class(returnoutput))
+ ### print (using the method determined by R):
+  returnoutput
+
 } ### end of function

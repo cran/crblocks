@@ -21,8 +21,6 @@ print.crblocks_output <- function(x,...) {
   cat(paste("  L^2         1    ",signif(x$L2data,Nsigfigs),"      ",signif(x$L2chi2pvalue,Nsigfigs),"      ",signif(x$L2pvalue,Nsigfigs),"\n"))
  }
  cat("\n")
-
- NextMethod("print")
 }
 
 

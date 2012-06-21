@@ -20,7 +20,7 @@
  \item{datafilename}{a character string giving the name of the data file to analyse.}
  \item{Nrepeats}{the number of Monte Carlo simulated data sets to use in computing the p-value (10000+ recommended).}
  \item{x}{output from catrandstat, catrandpvalue or catrandpvaluepermute}
- \item{\dots}{not used.}
+ \item{\dots}{not used}
 }
 \details{
  This package implements the statistical test for comparing barplots or histograms of
@@ -112,46 +112,47 @@
  # Load the data from the file and compute its test statistic
   inputfile = system.file('extdata', 'omahony.txt', package='crblocks')
   omahonydata=read.table(file(inputfile,'r'))
+  closeAllConnections()
   catrandstat(omahonydata)
 ### OUTPUT:
 #
 # Statistic   dof   data value   chi^2 p-value
-#  S           6     13.16        0.04058 
-#  M           3     11.42        0.003311 
-#  L^2         1     6.671        0.009799 
+#  S           6     13.16        0.04058
+#  M           3     11.42        0.003311
+#  L^2         1     6.671        0.009799
 #
 
  # Load the data from the file and compute the p-value for
  # its test statistic using Monte Carlo simulation:
-  catrandpvalue(inputfile,1000)
+  catrandpvalue(inputfile,500)
 ### SAMPLE OUTPUT:
 #
 # Statistic   dof   data value   chi^2 p-value   Simulated p-value
-#  S           6     13.16        0.04058         0.017 
-#  M           3     11.42        0.003311        0.002 
-#  L^2         1     6.671        0.009799        0.008 
+#  S           6     13.16        0.04058         0.018
+#  M           3     11.42        0.003311        0.002
+#  L^2         1     6.671        0.009799        0.008
 #
 
  # Load the data from the file, compute the p-value for
  # its test statistic using Monte Carlo simulation, and
  # store the output variables in X:
-  Nrepeats = 2000
+  Nrepeats = 500
   X = catrandpvalue(inputfile,Nrepeats)
  # This will be a number greater than Nrepeats:
   X$Ngenerated
 ### SAMPLE OUTPUT:
 #
-# [1] 27175
+# [1] 6651
 
  # Load the data from the file and compute the p-value for
  # its test statistic using Monte Carlo simulation:
- catrandpvaluepermute(inputfile,2000)
+ catrandpvaluepermute(inputfile,500)
 ### SAMPLE OUTPUT:
 #
 # Statistic   dof   data value   chi^2 p-value   Simulated p-value
-#  S           6     13.16        0.04058         0.0235 
-#  M           3     11.42        0.003311        0.002 
-#  L^2         1     6.671        0.009799        0.0065 
+#  S           6     13.16        0.04058         0.032
+#  M           3     11.42        0.003311        0.004
+#  L^2         1     6.671        0.009799        0.006
 #
 
 }

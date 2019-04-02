@@ -7,18 +7,18 @@ print.crblocks_output <- function(x,...) {
  if (!is.null(x$Sstatistic)){ ### format output from catrandstat()
   cat(paste(" Statistic   dof   data value   chi^2 p-value\n"))
   cat(paste("  S          ",(x$Nproducts-1)*(x$Ncategories-1),"   ",signif(x$Sstatistic,Nsigfigs),"      ",signif(x$Schi2pvalue,Nsigfigs),"\n"))
-  cat(paste("  M          ",x$Ncategories-1,"   ",signif(x$Mstatistic,Nsigfigs),"      ",signif(x$Mchi2pvalue,Nsigfigs),"\n"))
+  cat(paste("  M          ",x$Nproducts-1,"   ",signif(x$Mstatistic,Nsigfigs),"      ",signif(x$Mchi2pvalue,Nsigfigs),"\n"))
   cat(paste("  L^2         1    ",signif(x$L2statistic,Nsigfigs),"      ",signif(x$L2chi2pvalue,Nsigfigs),"\n"))
  } else if (!is.null(x$Smontecarlo)){ ### format output from catrandpvalue()
   cat(paste(" Statistic   dof   data value   chi^2 p-value   Simulated p-value\n"))
-  cat(paste("  S          ",(x$Nproducts-1)*(x$Ncategories-1),"   ",signif(x$Sdata,Nsigfigs),"      ",signif(x$Schi2pvalue,Nsigfigs),"       ",signif(x$Spvalue,Nsigfigs),"\n"))
-  cat(paste("  M          ",x$Ncategories-1,"   ",signif(x$Mdata,Nsigfigs),"      ",signif(x$Mchi2pvalue,Nsigfigs),"      ",signif(x$Mpvalue,Nsigfigs),"\n"))
-  cat(paste("  L^2         1    ",signif(x$L2data,Nsigfigs),"      ",signif(x$L2chi2pvalue,Nsigfigs),"      ",signif(x$L2pvalue,Nsigfigs),"\n"))
+  cat(paste("  S          ",(x$Nproducts-1)*(x$Ncategories-1),"   ",signif(x$Sdata,Nsigfigs),"      ",signif(x$Schi2pvalue,Nsigfigs),"        ",signif(x$Spvalue,Nsigfigs),"\n"))
+  cat(paste("  M          ",x$Nproducts-1,"   ",signif(x$Mdata,Nsigfigs),"      ",signif(x$Mchi2pvalue,Nsigfigs),"       ",signif(x$Mpvalue,Nsigfigs),"\n"))
+  cat(paste("  L^2         1    ",signif(x$L2data,Nsigfigs),"      ",signif(x$L2chi2pvalue,Nsigfigs),"       ",signif(x$L2pvalue,Nsigfigs),"\n"))
  } else if (!is.null(x$Spermute)){ ### format output from catrandpvaluepermute()
   cat(paste(" Statistic   dof   data value   chi^2 p-value   Simulated p-value\n"))
-  cat(paste("  S          ",(x$Nproducts-1)*(x$Ncategories-1),"   ",signif(x$Sdata,Nsigfigs),"      ",signif(x$Schi2pvalue,Nsigfigs),"       ",signif(x$Spvalue,Nsigfigs),"\n"))
-  cat(paste("  M          ",x$Ncategories-1,"   ",signif(x$Mdata,Nsigfigs),"      ",signif(x$Mchi2pvalue,Nsigfigs),"      ",signif(x$Mpvalue,Nsigfigs),"\n"))
-  cat(paste("  L^2         1    ",signif(x$L2data,Nsigfigs),"      ",signif(x$L2chi2pvalue,Nsigfigs),"      ",signif(x$L2pvalue,Nsigfigs),"\n"))
+  cat(paste("  S          ",(x$Nproducts-1)*(x$Ncategories-1),"   ",signif(x$Sdata,Nsigfigs),"       ",signif(x$Schi2pvalue,Nsigfigs),"        ",signif(x$Spvalue,Nsigfigs),"\n"))
+  cat(paste("  M          ",x$Nproducts-1,"   ",signif(x$Mdata,Nsigfigs),"      ",signif(x$Mchi2pvalue,Nsigfigs),"        ",signif(x$Mpvalue,Nsigfigs),"\n"))
+  cat(paste("  L^2         1    ",signif(x$L2data,Nsigfigs),"      ",signif(x$L2chi2pvalue,Nsigfigs),"        ",signif(x$L2pvalue,Nsigfigs),"\n"))
  }
  cat("\n")
 }
@@ -30,7 +30,6 @@ catrandstat <- function(rawdata){
 #######################################################################
 # Function to compute the statistic                                   #
 #######################################################################
-
 ### Extract the meta variables from the data:
  ### Njudges is the number of rows:
   Njudges <- nrow(rawdata)
@@ -157,7 +156,6 @@ catrandpvalue <- function(datafilename,Nrepeats){
 #######################################################################
 # Function to compute the p-value for the data                        #
 #######################################################################
-
  ### Check if the data file exists:
   if(!file.exists(datafilename))
    stop('File \'',datafilename,'\' not found')
@@ -170,6 +168,13 @@ catrandpvalue <- function(datafilename,Nrepeats){
  ### Close the file:
   close(inputfile)
 
+ ### check minimum number of repeats:
+  if (Nrepeats<10){
+   cat('\n Please specify at least 10 repeats\n')
+   dataoutput <- catrandstat(rawdata)
+   return
+  }
+
  #######################################################################
  # Compute the statistic for the data                                  #
  #######################################################################
@@ -181,43 +186,58 @@ catrandpvalue <- function(datafilename,Nrepeats){
   Mchi2pvalue <- dataoutput$Mchi2pvalue
   L2chi2pvalue <- dataoutput$L2chi2pvalue
 
- #######################################################################
- # Run the Monte Carlo simulations to compute a p-value                #
- #######################################################################
- ### Firstly, we generate the Monte Carlo data:
-  Ngenerated=0
-  montecarlodata=array(NaN,c(dataoutput$Njudges,dataoutput$Nproducts,Nrepeats))
-  for (i in 1:dataoutput$Njudges){
-   indx = 1:Nrepeats # initialise
-   while (length(indx)){
-    Ngenerated=Ngenerated+length(indx) # count how many we actully generate
-    montecarlodata[i,,indx]=dataoutput$categories[apply(rmultinom(length(indx)*dataoutput$Nproducts,1,dataoutput$judgeCatCounts[i,])==1,2,which)]
-    ### we have the data, now loop over them and see which are tied, so that we can replace them (those in 'indx'):
-    indx=indx[which(apply(apply(apply(montecarlodata[i,,indx],2,sort),2,diff),2,sum)==0)]
-    if (length(indx)==1){ # if there is only one element in indx, add another since R doesn't handle the multidimensional matrix indexing well with only one element
-     if (indx[1]==1){
-      indx[2]=2
-     } else {
-      indx[2]=1
+ if (Nrepeats>9){
+  #######################################################################
+  # Run the Monte Carlo simulations to compute a p-value                #
+  #######################################################################
+  ### Firstly, we generate the Monte Carlo data:
+   Ngenerated=0
+   montecarlodata=array(NaN,c(dataoutput$Njudges,dataoutput$Nproducts,Nrepeats))
+   for (i in 1:dataoutput$Njudges){
+    indx = 1:Nrepeats # initialise
+    while (length(indx)){
+     Ngenerated=Ngenerated+length(indx) # count how many we actully generate
+     ### test for run-away Monte Carlo process
+     if (Ngenerated>1000*Nrepeats){
+      stop(paste("\n  Covariance matrix of data is too close to singular to generate Monte Carlo data in reasonable time.\n  Try\n     catrandpvaluepermute('",datafilename,"',",Nrepeats,")",sep=""))
+     }
+     montecarlodata[i,,indx]=dataoutput$categories[apply(rmultinom(length(indx)*dataoutput$Nproducts,1,dataoutput$judgeCatCounts[i,])==1,2,which)]
+     ### we have the data, now loop over them and see which are tied, so that we can replace them (those in 'indx'):
+     indx=indx[which(apply(apply(apply(montecarlodata[i,,indx],2,sort),2,diff),2,sum)==0)]
+     if (length(indx)==1){ # if there is only one element in indx, add another since R doesn't handle the multidimensional matrix indexing well with only one element
+      if (indx[1]==1){
+       indx[2]=2
+      } else {
+       indx[2]=1
+      }
      }
     }
    }
-  }
 
- ### Now we can compute the statistic for each Monte Carlo data set:
-  Smontecarlo=matrix(NaN,Nrepeats,1) # initialise
-  Mmontecarlo=matrix(NaN,Nrepeats,1) # initialise
-  L2montecarlo=matrix(NaN,Nrepeats,1) # initialise
-  for (n in 1:Nrepeats){
-   montecarlooutput = catrandstat(montecarlodata[,,n])
-   Smontecarlo[n] = montecarlooutput$Sstatistic
-   Mmontecarlo[n] = montecarlooutput$Mstatistic
-   L2montecarlo[n] = montecarlooutput$L2statistic
-  }
+  ### Now we can compute the statistic for each Monte Carlo data set:
+   Smontecarlo=matrix(NaN,Nrepeats,1) # initialise
+   Mmontecarlo=matrix(NaN,Nrepeats,1) # initialise
+   L2montecarlo=matrix(NaN,Nrepeats,1) # initialise
+   for (n in 1:Nrepeats){
+    montecarlooutput = catrandstat(montecarlodata[,,n])
+    Smontecarlo[n] = montecarlooutput$Sstatistic
+    Mmontecarlo[n] = montecarlooutput$Mstatistic
+    L2montecarlo[n] = montecarlooutput$L2statistic
+   }
 
-Spvalue=length(Smontecarlo[Smontecarlo>c(Sdata)])/length(Smontecarlo)
-Mpvalue=length(Mmontecarlo[Mmontecarlo>c(Mdata)])/length(Mmontecarlo)
-L2pvalue=length(L2montecarlo[L2montecarlo>c(L2data)])/length(L2montecarlo)
+ Spvalue=length(Smontecarlo[Smontecarlo>c(Sdata)])/length(Smontecarlo)
+ Mpvalue=length(Mmontecarlo[Mmontecarlo>c(Mdata)])/length(Mmontecarlo)
+ L2pvalue=length(L2montecarlo[L2montecarlo>c(L2data)])/length(L2montecarlo)
+ } else {
+  ### Nrepeats was < 10
+   Ngenerated = 0
+   Smontecarlo = NaN
+   Mmontecarlo = NaN
+   L2montecarlo = NaN
+   Spvalue = NaN
+   Mpvalue = NaN
+   L2pvalue = NaN
+ }
 
 #######################################################################
 # Return some variables of interest                                   #

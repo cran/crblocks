@@ -10,10 +10,10 @@
  categorical data derived from a randomized block repeated measures layout.
 }
 \usage{
- catrandstat(rawdata)
- catrandpvalue(datafilename,Nrepeats)
- catrandpvaluepermute(datafilename,Nrepeats)
- \method{print}{crblocks_output}(x,\dots)
+catrandstat(rawdata)
+catrandpvalue(datafilename,Nrepeats)
+catrandpvaluepermute(datafilename,Nrepeats)
+\method{print}{crblocks_output}(x,\dots)
 }
 \arguments{
  \item{rawdata}{the data to analyse.}
@@ -38,12 +38,20 @@
  which each product was placed by that judge, with one column for each product. Each judge
  must categorise every product.
 
- Comments (starting with \#) are allowed (both on their own lines and at the end of lines
+ Comments (starting with #) are allowed (both on their own lines and at the end of lines
  of data). The file should not contain a header of column names: use a comment to include
  such descriptions.
 
  There are no error checks on the format.  Users should examine the values of
  Njudges and Nproducts in the output to ensure that they are as expected.
+
+ \bold{Note about singular covariance matrices:}
+
+ If the covariance matrix of the data is too close to singular, catrandpvalue() can take
+a very long time to generate the requested number ($Nrepeats) of Monte Carlo data sets.
+If the number of tries, $Ngenerated, exceeds 1000 $Nrepeats, the simulation is
+abandoned. In this case, catrandpvaluepermute() should be used, and the appropriate command,
+with the previously supplied inputs, will be shown.
 }
 \value{
  For the \code{catrandstat} function:
@@ -99,8 +107,11 @@
  \item{$L2chi2pvalue}{the chi^2 p-value of the L^2 statistic for the data.}
 }
 \references{
- ``A Statistical Test for Categorical Randomized Block Sensory Evaluation Data'',
- Best, D.J., Rayner, J.C.W. and Allingham, David. Journal of Sensory Studies, submitted, 2012.
+``Comparing Nonparametric Tests of Equality of Means for Randomized Block Designs'',
+Best, D.J., Rayner, J.C.W., Thas, O., de Neve, J., Allingham, D.,
+Communications in Statistics: Simulation and Computation, 45 (5): 1718-1730, 2016.
+% A Statistical Test for Categorical Randomized Block Sensory Evaluation Data,
+% Best, D.J., Rayner, J.C.W. and Allingham, David. Journal of Sensory Studies, submitted, 2012.
 }
 \author{
  Allingham, David \email{David.Allingham@newcastle.edu.au}
@@ -118,7 +129,7 @@
 #
 # Statistic   dof   data value   chi^2 p-value
 #  S           6     13.16        0.04058
-#  M           3     11.42        0.003311
+#  M           2     11.42        0.003311
 #  L^2         1     6.671        0.009799
 #
 
@@ -129,7 +140,7 @@
 #
 # Statistic   dof   data value   chi^2 p-value   Simulated p-value
 #  S           6     13.16        0.04058         0.018
-#  M           3     11.42        0.003311        0.002
+#  M           2     11.42        0.003311        0.002
 #  L^2         1     6.671        0.009799        0.008
 #
 
@@ -151,7 +162,7 @@
 #
 # Statistic   dof   data value   chi^2 p-value   Simulated p-value
 #  S           6     13.16        0.04058         0.032
-#  M           3     11.42        0.003311        0.004
+#  M           2     11.42        0.003311        0.004
 #  L^2         1     6.671        0.009799        0.006
 #
 

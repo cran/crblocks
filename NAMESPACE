@@ -1,2 +1,7 @@
+# Packages from which functions are imported
+importFrom("stats", "pchisq", "rmultinom", "var")
+importFrom("utils", "read.table", "stack")
 # Export all names
 exportPattern(".")
+# Register S3 method
+S3method(print, crblocks_output)
